@@ -4,23 +4,22 @@ import {
   ActivityIndicator, KeyboardAvoidingView, Platform 
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors } from '../colors';
-
-import { loginUser, User } from '../api';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface LoginProps {
-  onLogin: (user: User) => void;
+  onLogin: () => void;
   onGoToSignup: () => void;
-  theme: 'light' | 'dark';
 }
 
-export const Login: React.FC<LoginProps> = ({ onLogin, onGoToSignup, theme }) => {
+export const Login: React.FC<LoginProps> = ({ onLogin, onGoToSignup }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const colors = Colors[theme];
+  const { colors } = useTheme();
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     setError('');
@@ -31,8 +30,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onGoToSignup, theme }) =>
 
     setLoading(true);
     try {
-      const userData = await loginUser(email, password);
-      onLogin(userData);
+      await login(email, password);
+      onLogin();
     } catch (err: any) {
       setError(err.message || 'Invalid email or password');
     } finally {

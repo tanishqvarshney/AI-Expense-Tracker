@@ -2,24 +2,23 @@ import React, { useState } from 'react';
 import { 
   StyleSheet, Text, View, ScrollView, TouchableOpacity, 
   TextInput, Modal, Animated, Pressable, Alert, 
-  ActivityIndicator, Image 
+  ActivityIndicator, Image, FlatList 
 } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Expense } from '../types';
+import { getMerchantIcon, getCategoryIcon, getMerchantLogo } from '../utils/icons';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { queryAI } from '../api';
 import { SummaryCard } from '../components/SummaryCard';
 import { DonutChart } from '../components/DonutChart';
-import { Expense } from '../types';
-import { Colors } from '../colors';
-import { getMerchantIcon, getCategoryIcon, getMerchantLogo } from '../utils/icons';
-import { queryAI } from '../api';
 
 interface DashboardProps {
   expenses: Expense[];
   onAddPress: () => void;
   onExpensePress: (expense: Expense) => void;
-  onLogout: () => void;
   onAnalyticsPress: () => void;
   onSettingsPress: () => void;
-  theme: 'light' | 'dark';
 }
 
 const MerchantIcon: React.FC<{ name: string; colors: any }> = ({ name, colors }) => {
@@ -46,31 +45,28 @@ const MerchantIcon: React.FC<{ name: string; colors: any }> = ({ name, colors })
   }
 
   return (
-    <MaterialCommunityIcons 
-      name={getMerchantIcon(name)} 
-      size={24} 
-      color={colors.text} 
+    <MaterialCommunityIcons
+      name={getMerchantIcon(name)}
+      size={24}
+      color={colors.text}
     />
   );
 };
 
-export const Dashboard: React.FC<DashboardProps> = ({ 
-  expenses, 
-  onAddPress, 
+export const Dashboard: React.FC<DashboardProps> = ({
+  expenses,
+  onAddPress,
   onExpensePress,
-  onLogout,
   onAnalyticsPress,
   onSettingsPress,
-  theme
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [aiQuery, setAiQuery] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
-  
-  const colors = Colors[theme];
-  const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0);
-  const totalReceipts = expenses.length;
+
+  const { theme, colors, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
 
@@ -97,19 +93,106 @@ export const Dashboard: React.FC<DashboardProps> = ({
      }
   };
 
-  // Process data for the dynamic donut chart
-  const categoriesMap = expenses.reduce((acc, e) => {
-    const cat = e.category || 'Other';
-    acc[cat] = (acc[cat] || 0) + e.amount;
-    return acc;
-  }, {} as Record<string, number>);
+  const { totalAmount, totalReceipts, chartData } = React.useMemo(() => {
+    const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const count = expenses.length;
 
-  const chartColors = ['#004B23', '#DAF7A6', '#00703C', '#2ECC71', '#27AE60'];
-  const chartData = Object.entries(categoriesMap).map(([name, value], i) => ({
-    name,
-    value,
-    color: chartColors[i % chartColors.length]
-  }));
+    const categoriesMap = expenses.reduce((acc, e) => {
+      const cat = e.category || 'Other';
+      acc[cat] = (acc[cat] || 0) + e.amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const chartColors = ['#004B23', '#DAF7A6', '#00703C', '#2ECC71', '#27AE60'];
+    const data = Object.entries(categoriesMap).map(([name, value], i) => ({
+      name,
+      value: value as number,
+      color: chartColors[i % chartColors.length]
+    }));
+
+    return { totalAmount: total, totalReceipts: count, chartData: data };
+  }, [expenses]);
+
+  const renderExpenseItem = ({ item }: { item: Expense }) => (
+    <TouchableOpacity 
+      key={item.id} 
+      style={[styles.tableRow, { borderBottomColor: colors.border }]} 
+      onPress={() => onExpensePress(item)}
+    >
+      <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
+        <MerchantIcon name={item.merchant || item.description || ''} colors={colors} />
+      </View>
+      <View style={{ flex: 1, marginLeft: 12 }}>
+        <Text style={[styles.tableName, { color: colors.text }]} numberOfLines={1}>
+          {item.merchant || item.description || "Unnamed Expense"}
+        </Text>
+        <Text style={[styles.tableSub, { color: colors.textSecondary }]}>
+           {item.category || 'General'} • {new Date(item.created_at || '').toLocaleDateString()}
+        </Text>
+      </View>
+      <Text style={[styles.tableAmount, { color: colors.text }]}>₹{item.amount.toFixed(2)}</Text>
+    </TouchableOpacity>
+  );
+
+  const HeaderComponent = () => (
+    <>
+      <Text style={[styles.greeting, { color: colors.text }]}>Hello, {user?.name || 'User'} 👋</Text>
+
+      {/* SummarySection */}
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Summary</Text>
+        <TouchableOpacity style={styles.datePicker}>
+          <Text style={[styles.dateText, { color: colors.textSecondary }]}>Last 30 days</Text>
+          <Feather name="chevron-down" size={16} color={colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.summaryRow}>
+        <SummaryCard 
+          label="Total" 
+          value={`₹${totalAmount.toFixed(2)}`} 
+          isAmount 
+          theme={theme}
+        />
+        <SummaryCard 
+          label="Receipts" 
+          value={totalReceipts.toString()} 
+          theme={theme}
+        />
+      </View>
+
+      {/* Categories Section */}
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Categories</Text>
+      </View>
+
+      <View style={styles.chartWrapper}>
+          <DonutChart 
+            size={180}
+            data={chartData} 
+            text={totalReceipts > 0 ? "Spending distribution" : "No data yet"}
+            theme={theme}
+          />
+          {/* Chart Legend */}
+          <View style={styles.legendContainer}>
+            {chartData.map((item, i) => (
+              <View key={i} style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: item.color }]} />
+                <Text style={[styles.legendText, { color: colors.text }]}>{item.name}</Text>
+                <Text style={[styles.legendValue, { color: colors.textSecondary }]}>
+                  {((item.value / (totalAmount || 1)) * 100).toFixed(0)}%
+                </Text>
+              </View>
+            ))}
+          </View>
+      </View>
+
+      {/* Recent Expenses List */}
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Expenses</Text>
+      </View>
+    </>
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -124,90 +207,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <Text style={[styles.greeting, { color: colors.text }]}>Hello, Admin 👋</Text>
-
-        {/* SummarySection */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Summary</Text>
-          <TouchableOpacity style={styles.datePicker}>
-            <Text style={[styles.dateText, { color: colors.textSecondary }]}>Last 30 days</Text>
-            <Feather name="chevron-down" size={16} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.summaryRow}>
-          <SummaryCard 
-            label="Total" 
-            value={`₹${totalAmount.toFixed(2)}`} 
-            isAmount 
-            theme={theme}
-          />
-          <SummaryCard 
-            label="Receipts" 
-            value={totalReceipts.toString()} 
-            theme={theme}
-          />
-        </View>
-
-        {/* Categories Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Categories</Text>
-        </View>
-
-        <View style={styles.chartWrapper}>
-            <DonutChart 
-              size={180}
-              data={chartData} 
-              text={totalReceipts > 0 ? "Spending distribution" : "No data yet"}
-              theme={theme}
-            />
-            {/* Chart Legend */}
-            <View style={styles.legendContainer}>
-              {chartData.map((item, i) => (
-                <View key={i} style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-                  <Text style={[styles.legendText, { color: colors.text }]}>{item.name}</Text>
-                  <Text style={[styles.legendValue, { color: colors.textSecondary }]}>
-                    {((item.value / totalAmount) * 100).toFixed(0)}%
-                  </Text>
-                </View>
-              ))}
-            </View>
-        </View>
-
-        {/* Recent Expenses List */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Expenses</Text>
-        </View>
-        
-        {expenses.length === 0 ? (
+      <FlatList
+        data={expenses}
+        renderItem={renderExpenseItem}
+        keyExtractor={item => item.id.toString()}
+        ListHeaderComponent={HeaderComponent}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
           <View style={styles.emptyTable}>
             <Text style={[styles.emptyTableText, { color: colors.textSecondary }]}>No transactions found</Text>
           </View>
-        ) : (
-          expenses.slice(0, 10).map(e => (
-            <TouchableOpacity 
-              key={e.id} 
-              style={[styles.tableRow, { borderBottomColor: colors.border }]} 
-              onPress={() => onExpensePress(e)}
-            >
-              <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
-                <MerchantIcon name={e.merchant || e.description || ''} colors={colors} />
-              </View>
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={[styles.tableName, { color: colors.text }]} numberOfLines={1}>
-                  {e.merchant || e.description || "Unnamed Expense"}
-                </Text>
-                <Text style={[styles.tableSub, { color: colors.textSecondary }]}>
-                   {e.category || 'General'} • {new Date(e.created_at || '').toLocaleDateString()}
-                </Text>
-              </View>
-              <Text style={[styles.tableAmount, { color: colors.text }]}>₹{e.amount.toFixed(2)}</Text>
-            </TouchableOpacity>
-          ))
-        )}
-      </ScrollView>
+        }
+      />
 
       {/* AI Response Bubble */}
       {aiResponse && (
@@ -268,7 +280,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <Text style={[styles.menuItemText, { color: colors.text }]}>Settings</Text>
               </TouchableOpacity>
               <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
-              <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={() => { toggleMenu(); onLogout(); }}>
+              <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={() => { toggleMenu(); logout(); }}>
                 <Feather name="log-out" size={20} color={colors.error} />
                 <Text style={[styles.menuItemText, { color: colors.error }]}>Logout</Text>
               </TouchableOpacity>

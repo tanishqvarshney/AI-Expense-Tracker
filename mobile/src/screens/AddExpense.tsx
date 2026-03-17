@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { CalculatorKeyboard } from '../components/CalculatorKeyboard';
+import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../colors';
 
 interface AddExpenseProps {
@@ -23,7 +24,7 @@ const CURRENCIES = [
   { code: 'AUD', symbol: 'A$' },
 ];
 
-export const AddExpense: React.FC<AddExpenseProps> = ({ onBack, onSave, theme }) => {
+export const AddExpense: React.FC<AddExpenseProps> = ({ onBack, onSave }) => {
   const [amount, setAmount] = useState('0.00');
   const [merchant, setMerchant] = useState('');
   const [note, setNote] = useState('');
@@ -31,7 +32,7 @@ export const AddExpense: React.FC<AddExpenseProps> = ({ onBack, onSave, theme })
   const [currency, setCurrency] = useState(CURRENCIES[0]);
   const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
 
-  const colors = Colors[theme];
+  const { theme, colors } = useTheme();
 
   const handleKeyPress = (val: string) => {
     if (amount === '0.00') setAmount(val);

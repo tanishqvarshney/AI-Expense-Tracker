@@ -25,11 +25,14 @@ export const initDB = () => {
       description TEXT NOT NULL,
       merchant TEXT,
       merchant_address TEXT,
-      products TEXT, -- Store as JSON string
+      products TEXT,
       original_input TEXT NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
+
+    CREATE INDEX IF NOT EXISTS idx_expenses_user_id ON expenses(user_id);
+    CREATE INDEX IF NOT EXISTS idx_expenses_created_at ON expenses(created_at);
   `);
 
   // Migration: Add user_id column if missing from earlier versions

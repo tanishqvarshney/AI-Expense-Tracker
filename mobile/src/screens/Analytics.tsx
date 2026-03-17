@@ -5,14 +5,15 @@ import { DonutChart } from '../components/DonutChart';
 import { Expense } from '../types';
 import { Colors } from '../colors';
 
+import { useTheme } from '../context/ThemeContext';
+
 interface AnalyticsProps {
   expenses: Expense[];
   onBack: () => void;
-  theme: 'light' | 'dark';
 }
 
-export const Analytics: React.FC<AnalyticsProps> = ({ expenses, onBack, theme }) => {
-  const colors = Colors[theme];
+export const Analytics: React.FC<AnalyticsProps> = ({ expenses, onBack }) => {
+  const { theme, colors } = useTheme();
   const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0);
   
   // Basic category aggregation

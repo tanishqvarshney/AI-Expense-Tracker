@@ -3,16 +3,18 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Switch } from 're
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '../colors';
 
+import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+
 interface SettingsProps {
   onBack: () => void;
-  theme: 'light' | 'dark';
-  toggleTheme: () => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ onBack, theme, toggleTheme }) => {
+export const Settings: React.FC<SettingsProps> = ({ onBack }) => {
   const [notifications, setNotifications] = useState(true);
   const [biometrics, setBiometrics] = useState(false);
-  const colors = Colors[theme];
+  const { theme, colors, toggleTheme } = useTheme();
+  const { user } = useAuth();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -30,14 +32,14 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, theme, toggleTheme }
           <View style={[styles.item, { borderBottomColor: colors.border }]}>
             <View>
               <Text style={[styles.itemTitle, { color: colors.text }]}>Display Name</Text>
-              <Text style={[styles.itemValue, { color: colors.textSecondary }]}>Admin</Text>
+              <Text style={[styles.itemValue, { color: colors.textSecondary }]}>{user?.name || 'Admin'}</Text>
             </View>
             <Feather name="chevron-right" size={20} color={colors.border} />
           </View>
           <View style={[styles.item, { borderBottomColor: colors.border }]}>
             <View>
               <Text style={[styles.itemTitle, { color: colors.text }]}>Email</Text>
-              <Text style={[styles.itemValue, { color: colors.textSecondary }]}>admin@example.com</Text>
+              <Text style={[styles.itemValue, { color: colors.textSecondary }]}>{user?.email || 'admin@example.com'}</Text>
             </View>
             <Feather name="chevron-right" size={20} color={colors.border} />
           </View>

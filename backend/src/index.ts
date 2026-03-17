@@ -2,7 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { initDB } from './db';
-import routes from './routes';
+import router from './routes';
+import { errorHandler } from './middleware/error.middleware';
 
 dotenv.config();
 
@@ -16,7 +17,10 @@ app.use(express.json());
 initDB();
 
 // Setup Routing
-app.use('/', routes);
+app.use('/', router);
+
+// Error handling middleware
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`🚀 API Server running on port ${PORT}`);

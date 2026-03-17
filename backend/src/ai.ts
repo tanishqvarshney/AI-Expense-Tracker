@@ -21,28 +21,21 @@ export const parseExpense = async (text: string): Promise<ParsedExpense> => {
       messages: [
         {
           role: 'system',
-          content: `You are an expense parser. Extract structured expense data from the user's natural language input.
+          content: `You are a financial data extraction engine. Extract structured expense information from natural language.
+
 Rules:
-- Extract "amount" (required, number).
-- Default "currency" = "INR".
-- "category" MUST be exactly one of: Food & Dining, Transport, Shopping, Entertainment, Bills & Utilities, Health, Travel, Other. If unsure, use "Other".
-- Clean "description" (short summary of what was bought).
-- "merchant" nullable (extract if mentioned, otherwise null).
+1. "amount": Required number.
+2. "currency": Default "INR".
+3. "category": Must be one of: Food & Dining, Transport, Shopping, Entertainment, Bills & Utilities, Health, Travel, Other.
+4. "description": Brief summary.
+5. "merchant": Specific name if available.
 
-Return ONLY valid JSON in this exact format:
-{
-  "amount": number,
-  "currency": "INR",
-  "category": "string",
-  "description": "string",
-  "merchant": "string" | null
-}
+Examples:
+- "Spent 200 on Coffee at Starbucks" -> {"amount": 200, "currency": "INR", "category": "Food & Dining", "description": "Coffee", "merchant": "Starbucks"}
+- "Electricity bill 1500" -> {"amount": 1500, "currency": "INR", "category": "Bills & Utilities", "description": "Electricity bill", "merchant": null}
+- "Gas for 50 USD" -> {"amount": 50, "currency": "USD", "category": "Transport", "description": "Gas", "merchant": null}
 
-If no amount is found or you cannot parse the expense, return:
-{
-  "error": "Could not parse expense. Please include an amount.",
-  "amount": null
-}`
+Return ONLY valid JSON.`
         },
         { role: 'user', content: text }
       ],

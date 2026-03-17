@@ -4,23 +4,23 @@ import {
   ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView 
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors } from '../colors';
-import { signupUser, User } from '../api';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface SignupProps {
-  onSignup: (user: User) => void;
+  onSignup: () => void;
   onBackToLogin: () => void;
-  theme: 'light' | 'dark';
 }
 
-export const Signup: React.FC<SignupProps> = ({ onSignup, onBackToLogin, theme }) => {
+export const Signup: React.FC<SignupProps> = ({ onSignup, onBackToLogin }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const colors = Colors[theme];
+  const { colors } = useTheme();
+  const { signup } = useAuth();
 
   const handleSignup = async () => {
     setError('');
@@ -31,8 +31,8 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onBackToLogin, theme }
 
     setLoading(true);
     try {
-      const userData = await signupUser(email, password, name);
-      onSignup(userData);
+      await signup(email, password, name);
+      onSignup();
     } catch (err: any) {
       setError(err.message || 'Signup failed. Please try again.');
     } finally {
