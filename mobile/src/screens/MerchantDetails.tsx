@@ -34,8 +34,13 @@ export const MerchantDetails: React.FC<MerchantDetailsProps> = ({
     products: true,
   });
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedMerchant, setEditedMerchant] = useState(expense.merchant || expense.description || '');
+  const [editedAmount, setEditedAmount] = useState(expense.amount.toString());
+  const [editedCategory, setEditedCategory] = useState(expense.category || '');
   const [address, setAddress] = useState(expense.merchant_address || 'N/A');
   const [isEditingAddress, setIsEditingAddress] = useState(false);
+  
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       return expense.products ? JSON.parse(expense.products) : [];
@@ -56,6 +61,15 @@ export const MerchantDetails: React.FC<MerchantDetailsProps> = ({
   const saveAddress = () => {
     setIsEditingAddress(false);
     onUpdate(expense.id, { merchant_address: address });
+  };
+
+  const handleFullSave = () => {
+    onUpdate(expense.id, {
+      merchant: editedMerchant,
+      amount: parseFloat(editedAmount) || 0,
+      category: editedCategory
+    });
+    setIsEditing(false);
   };
 
   const addProduct = () => {
@@ -79,7 +93,7 @@ export const MerchantDetails: React.FC<MerchantDetailsProps> = ({
     onUpdate(expense.id, { products: JSON.stringify(updatedProducts) });
   };
 
-  const merchantName = (expense.merchant || expense.description || "Unnamed Merchant").toUpperCase();
+  const merchantName = (isEditing ? editedMerchant : (expense.merchant || expense.description || "Unnamed Merchant")).toUpperCase();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -89,8 +103,8 @@ export const MerchantDetails: React.FC<MerchantDetailsProps> = ({
           <Feather name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>{merchantName}</Text>
-        <TouchableOpacity>
-          <Feather name="more-vertical" size={24} color={colors.text} />
+        <TouchableOpacity onPress={() => setIsEditing(!isEditing)}>
+          <Feather name={isEditing ? "x" : "more-vertical"} size={24} color={isEditing ? colors.error : colors.text} />
         </TouchableOpacity>
       </View>
 
@@ -105,6 +119,17 @@ export const MerchantDetails: React.FC<MerchantDetailsProps> = ({
         </TouchableOpacity>
         {sections.merchant && (
           <View style={styles.sectionContent}>
+             {isEditing ? (
+               <View style={styles.detailRow}>
+                 <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Name</Text>
+                 <TextInput 
+                   style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+                   value={editedMerchant}
+                   onChangeText={setEditedMerchant}
+                 />
+               </View>
+             ) : null}
+             
              {isEditingAddress ? (
                <View style={styles.editRow}>
                  <TextInput 
@@ -141,8 +166,16 @@ export const MerchantDetails: React.FC<MerchantDetailsProps> = ({
               <Text style={[styles.detailValue, { color: colors.text }]}>{expense.description || "Add note"}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Tags</Text>
-              <Text style={[styles.detailValue, { color: colors.text }]}>{expense.category || "Add Tags"}</Text>
+              <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Tags / Category</Text>
+              {isEditing ? (
+                <TextInput 
+                  style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+                  value={editedCategory}
+                  onChangeText={setEditedCategory}
+                />
+              ) : (
+                <Text style={[styles.detailValue, { color: colors.text }]}>{expense.category || "Add Tags"}</Text>
+              )}
             </View>
             <View style={styles.detailRow}>
               <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Date</Text>
@@ -150,7 +183,16 @@ export const MerchantDetails: React.FC<MerchantDetailsProps> = ({
             </View>
             <View style={styles.detailRow}>
               <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Total Amount</Text>
-              <Text style={[styles.detailValue, { color: colors.text }]}>₹{expense.amount.toFixed(2)}</Text>
+              {isEditing ? (
+                <TextInput 
+                  style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+                  value={editedAmount}
+                  onChangeText={setEditedAmount}
+                  keyboardType="numeric"
+                />
+              ) : (
+                <Text style={[styles.detailValue, { color: colors.text }]}>₹{expense.amount.toFixed(2)}</Text>
+              )}
             </View>
           </View>
         )}
@@ -185,8 +227,17 @@ export const MerchantDetails: React.FC<MerchantDetailsProps> = ({
 
         <View style={[styles.totalRow, { borderTopColor: colors.border }]}>
           <Text style={[styles.totalLabel, { color: colors.text }]}>Total</Text>
-          <Text style={[styles.totalValue, { color: colors.text }]}>₹{expense.amount.toFixed(2)}</Text>
+          <Text style={[styles.totalValue, { color: colors.text }]}>₹{isEditing ? parseFloat(editedAmount || '0').toFixed(2) : expense.amount.toFixed(2)}</Text>
         </View>
+
+        {isEditing && (
+          <TouchableOpacity 
+            style={[styles.saveAllButton, { backgroundColor: colors.primary }]}
+            onPress={handleFullSave}
+          >
+            <Text style={styles.saveAllText}>Save Changes</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       {/* Add Product Modal */}
@@ -227,13 +278,9 @@ export const MerchantDetails: React.FC<MerchantDetailsProps> = ({
           <Feather name="trash-2" size={24} color={colors.text} />
           <Text style={[styles.footerText, { color: colors.text }]}>Delete</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.footerAction}>
-          <Feather name="edit-3" size={24} color={colors.text} />
-          <Text style={[styles.footerText, { color: colors.text }]}>Note</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerAction}>
-          <Feather name="edit-2" size={24} color={colors.text} />
-          <Text style={[styles.footerText, { color: colors.text }]}>Edit</Text>
+        <TouchableOpacity style={styles.footerAction} onPress={() => setIsEditing(!isEditing)}>
+          <Feather name={isEditing ? "edit-3" : "edit-2"} size={24} color={isEditing ? colors.primary : colors.text} />
+          <Text style={[styles.footerText, { color: isEditing ? colors.primary : colors.text }]}>{isEditing ? "Quit" : "Edit"}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -277,5 +324,22 @@ const styles = StyleSheet.create({
   addBtn: { backgroundColor: 'transparent' },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, flexDirection: 'row', borderTopWidth: 1, paddingBottom: 20 },
   footerAction: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  footerText: { fontSize: 12, marginTop: 4 }
+  footerText: { fontSize: 12, marginTop: 4 },
+  saveAllButton: {
+    marginTop: 20,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  saveAllText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  }
 });

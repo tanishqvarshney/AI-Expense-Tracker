@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  StyleSheet, Alert, ActivityIndicator, View 
+  StyleSheet, Alert, ActivityIndicator, View, Platform 
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -105,27 +105,35 @@ export default function App() {
   };
 
   const handleDelete = (id: number) => {
-    Alert.alert(
-      "Delete Expense",
-      "Are you sure?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete", 
-          style: "destructive",
-          onPress: async () => {
-            if (!user) return;
-            try {
-              await deleteExpense(user.id, id);
-              setExpenses(prev => prev.filter(e => e.id !== id));
-              setView('dashboard');
-            } catch (err: any) {
-              Alert.alert('Error', err.message);
-            }
-          } 
-        }
-      ]
-    );
+    const performDelete = async () => {
+      if (!user) return;
+      try {
+        await deleteExpense(user.id, id);
+        setExpenses(prev => prev.filter(e => e.id !== id));
+        setView('dashboard');
+      } catch (err: any) {
+        Alert.alert('Error', err.message);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm("Are you sure you want to delete this expense?")) {
+        performDelete();
+      }
+    } else {
+      Alert.alert(
+        "Delete Expense",
+        "Are you sure?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Delete", 
+            style: "destructive",
+            onPress: performDelete
+          }
+        ]
+      );
+    }
   };
 
   const handleUpdateExpense = async (id: number, updates: Partial<Expense>) => {

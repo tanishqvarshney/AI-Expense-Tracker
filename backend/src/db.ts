@@ -100,6 +100,26 @@ export const updateExpense = (userId: number, id: number, updates: Partial<Expen
   const fields: string[] = [];
   const values: any[] = [];
 
+  if (updates.amount !== undefined) {
+    fields.push('amount = ?');
+    values.push(updates.amount);
+  }
+  if (updates.currency !== undefined) {
+    fields.push('currency = ?');
+    values.push(updates.currency);
+  }
+  if (updates.category !== undefined) {
+    fields.push('category = ?');
+    values.push(updates.category);
+  }
+  if (updates.merchant !== undefined) {
+    fields.push('merchant = ?');
+    values.push(updates.merchant);
+  }
+  if (updates.description !== undefined) {
+    fields.push('description = ?');
+    values.push(updates.description);
+  }
   if (updates.merchant_address !== undefined) {
     fields.push('merchant_address = ?');
     values.push(updates.merchant_address);
