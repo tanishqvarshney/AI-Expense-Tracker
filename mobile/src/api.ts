@@ -61,13 +61,11 @@ export const addExpense = async (userId: number, input: string): Promise<Expense
 };
 
 export const deleteExpense = async (userId: number, id: number): Promise<void> => {
-  console.log(`[API] Deleting expense ${id} for user ${userId} at ${API_URL}/expenses/${id}`);
   const response = await fetchWithTimeout(`${API_URL}/expenses/${id}`, { 
     method: 'DELETE',
     headers: { 'X-User-Id': userId.toString() }
   });
   const json: ApiResponse<void> = await response.json();
-  console.log(`[API] Delete response:`, json);
   if (!json.success) throw new ApiError(json.error || 'Failed to delete expense');
 };
 

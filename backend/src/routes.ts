@@ -103,24 +103,18 @@ router.delete('/api/expenses/:id', (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
     const userId = parseInt(req.get('X-User-Id') || '');
-    
-    console.log(`[DELETE] Attempting to delete expense ${id} for user ${userId}`);
 
     if (isNaN(id) || isNaN(userId)) {
-      console.log(`[DELETE] Validation failed: id=${id}, userId=${userId}`);
       return res.status(400).json({ success: false, error: 'Invalid ID or Unauthorized' });
     }
 
     const deleted = deleteExpense(userId, id);
     if (!deleted) {
-      console.log(`[DELETE] Expense ${id} not found or unauthorized for user ${userId}`);
       return res.status(404).json({ success: false, error: 'Expense not found or unauthorized' });
     }
 
-    console.log(`[DELETE] Successfully deleted expense ${id}`);
     res.json({ success: true });
   } catch (error) {
-    console.error(`[DELETE] Error:`, error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
