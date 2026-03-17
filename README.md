@@ -2,6 +2,12 @@
 
 A full-stack mobile application that uses Artificial Intelligence to extract structured expense information from natural language inputs ("Uber 350", "Spent 1000 on pizza").
 
+## ✨ Project Demo
+![AI Expense Tracker Demo](assets/demo.webp)
+
+### 📱 Dashboard Preview (Dark Mode)
+![Dark Mode Dashboard](assets/dashboard-dark.png)
+
 ## 🛠 Tech Stack
 - **Backend**: Node.js, Express, TypeScript, `better-sqlite3`
 - **Mobile SDK**: React Native, Expo, TypeScript 
