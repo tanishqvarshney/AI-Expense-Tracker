@@ -5,7 +5,19 @@ A full-stack mobile application that uses Artificial Intelligence to extract str
 ## ✨ Project Demo
 ![AI Expense Tracker Demo](assets/demo.webp)
 
-### 📱 Dashboard Preview (Dark Mode)
+## 📸 App Gallery
+
+### 🖥️ Web View
+| Dashboard | Analytics |
+| :---: | :---: |
+| ![Main Dashboard](assets/dashboard-main.png) | ![Analytics Breakdown](assets/analytics.png) |
+
+### 📱 Mobile View
+| Multi-Segment Chart | Add Expense | Recent History |
+| :---: | :---: | :---: |
+| ![Mobile Dashboard](assets/dashboard-mobile.png) | ![New Expense](assets/add-expense-mobile.png) | ![Expenses List](assets/recent-expenses.png) |
+
+### 🌙 Dark Mode Preview
 ![Dark Mode Dashboard](assets/dashboard-dark.png)
 
 ## 🛠 Tech Stack
